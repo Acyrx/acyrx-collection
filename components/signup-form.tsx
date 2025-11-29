@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Github, Facebook, Eye, EyeOff, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
+import { Github, Phone, Eye, EyeOff, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
 import { ErrorModal } from "@/components/error-modal"
-import { signup } from "@/app/auth/action"
+import { signup } from "@/app/auth/actions"
 import Image from "next/image";
 
 const isPhoneNumber = (value: string): boolean => {
@@ -301,7 +301,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           <div className="flex items-center justify-center gap-2">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/20 border border-primary/30">
               <Image
-                src="/images/ai.png"
+                src="/images/collection.png"
                 alt="AI Logo"
                 width={60}
                 height={60}
@@ -328,11 +328,11 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleSocialSignup("facebook")}
+              // onClick={() => handleSocialSignup("facebook")}
               className="h-11 border-border/50 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200"
             >
-              <Facebook className="w-4 h-4 mr-2" />
-              Facebook
+              <Phone className="w-4 h-4 mr-2" />
+              Phone Number
             </Button>
           </div>
 

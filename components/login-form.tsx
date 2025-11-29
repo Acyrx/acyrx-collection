@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Github, Facebook, Eye, EyeOff, Sparkles } from "lucide-react"
-import { createClient } from "@/utils/supabase/client";
+import { Github, Phone , Eye, EyeOff, Sparkles } from "lucide-react"
+import { createClient } from "@/lib/supabase/client";
 import { ErrorModal } from "./error-modal"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
@@ -231,15 +231,15 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         <div className="flex items-center justify-center gap-3">
         <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 border border-primary/20">
           <Image
-            src="/images/ai.png"
+            src="/images/collection.png"
             alt="AI Logo"
-            width={60}
-            height={60}
+            width={100}
+            height={100}
             className="object-contain rounded-xl"
           />
         </div>
         <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-foreground/70 bg-clip-text text-transparent">
-          AI
+          Collection
         </CardTitle>
       </div>
           <CardDescription className="text-muted-foreground">Sign in to your account to continue</CardDescription>
@@ -258,11 +258,11 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleSocialLogin("facebook")}
+              // onClick={() => handleSocialLogin("facebook")}
               className="h-11 border-border/50 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200"
             >
-              <Facebook className="w-4 h-4 mr-2" />
-              Facebook
+              <Phone className="w-4 h-4 mr-2" />
+              Phone Number
             </Button>
           </div>
 
