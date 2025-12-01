@@ -7,29 +7,23 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Github, Phone, Eye, EyeOff, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
+import { Phone, Github, Eye, EyeOff, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
 import { ErrorModal } from "@/components/error-modal"
-import { signup } from "@/app/auth/actions"
-import Image from "next/image";
+import { PhoneLoginModal } from "@/components/phone-login-modal"
+import { signup, signinWithGithub } from "@/app/auth/actions"
 
 const isPhoneNumber = (value: string): boolean => {
-  // Remove all non-digit characters
   const digitsOnly = value.replace(/\D/g, "")
-
-  // Check if it's a valid phone number (7-15 digits)
   if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
-    // Additional checks for common phone number patterns
     const phonePatterns = [
-      /^\+?1?[2-9]\d{2}[2-9]\d{2}\d{4}$/, // US format
-      /^\+?[1-9]\d{1,14}$/, // International format
-      /^[0-9]{10}$/, // Simple 10 digit
-      /^$$[0-9]{3}$$\s?[0-9]{3}-?[0-9]{4}$/, // (123) 456-7890
-      /^[0-9]{3}-?[0-9]{3}-?[0-9]{4}$/, // 123-456-7890
+      /^\+?1?[2-9]\d{2}[2-9]\d{2}\d{4}$/,
+      /^\+?[1-9]\d{1,14}$/,
+      /^[0-9]{10}$/,
+      /^$$[0-9]{3}$$\s?[0-9]{3}-?[0-9]{4}$/,
+      /^[0-9]{3}-?[0-9]{3}-?[0-9]{4}$/,
     ]
-
     return phonePatterns.some((pattern) => pattern.test(value))
   }
-
   return false
 }
 
@@ -41,7 +35,6 @@ const isEmail = (value: string): boolean => {
 const validateUsername = (username: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = []
 
-  // Check length
   if (username.length === 0) {
     errors.push("Username is required")
   } else if (username.length > 50) {
@@ -50,7 +43,6 @@ const validateUsername = (username: string): { isValid: boolean; errors: string[
     errors.push("Username must be at least 3 characters")
   }
 
-  // Check for forbidden characters (SQL injection prevention)
   const forbiddenChars = [
     " ",
     '"',
@@ -82,7 +74,6 @@ const validateUsername = (username: string): { isValid: boolean; errors: string[
     errors.push(`Username cannot contain: ${foundForbiddenChars.join(", ")}`)
   }
 
-  // Check for valid characters (alphanumeric, dash, underscore only)
   const validPattern = /^[a-zA-Z0-9\-_]*$/
   if (username && !validPattern.test(username)) {
     errors.push("Username can only contain letters, numbers, hyphens, and underscores")
@@ -99,7 +90,6 @@ const validatePassword = (
 ): { isValid: boolean; errors: string[]; strength: "weak" | "medium" | "strong" } => {
   const errors: string[] = []
 
-  // Check length
   if (password.length === 0) {
     errors.push("Password is required")
   } else if (password.length < 8) {
@@ -108,7 +98,6 @@ const validatePassword = (
     errors.push("Password must be 60 characters or less")
   }
 
-  // Strength checks
   let strength: "weak" | "medium" | "strong" = "weak"
   let strengthScore = 0
 
@@ -154,6 +143,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     isOpen: false,
     message: "",
   })
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
 
   useEffect(() => {
     if (!emailOrPhone.trim()) {
@@ -166,7 +156,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     } else if (isPhoneNumber(emailOrPhone)) {
       setDetectedType("phone")
     } else {
-      setDetectedType("email") // Default to email for partial inputs
+      setDetectedType("email")
     }
   }, [emailOrPhone])
 
@@ -187,63 +177,56 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   }, [password])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError({ isOpen: false, message: "" }); // Clear previous errors
+    e.preventDefault()
+    setIsLoading(true)
+    setError({ isOpen: false, message: "" })
 
     try {
-      // Local validation first
-      const usernameCheck = validateUsername(username);
-      const passwordCheck = validatePassword(password);
+      const usernameCheck = validateUsername(username)
+      const passwordCheck = validatePassword(password)
 
       if (!usernameCheck.isValid) {
-        throw new Error(`Username validation failed: ${usernameCheck.errors.join(", ")}`);
+        throw new Error(`Username validation failed: ${usernameCheck.errors.join(", ")}`)
       }
 
       if (!passwordCheck.isValid) {
-        throw new Error(`Password validation failed: ${passwordCheck.errors.join(", ")}`);
+        throw new Error(`Password validation failed: ${passwordCheck.errors.join(", ")}`)
       }
 
-      // Build FormData for the Supabase signup function
-      const formData = new FormData();
-      formData.append("email", emailOrPhone);
-      formData.append("password", password);
-      formData.append("username", username);
+      const formData = new FormData()
+      formData.append("username", username)
+      formData.append(detectedType === "email" ? "email" : "phone", emailOrPhone)
+      formData.append("password", password)
 
-      // Call Supabase signup API
-      const result = await signup(formData);
+      const result = await signup(formData)
 
       if (!result.success) {
-        const supabaseError = result.error;
-        throw new Error(supabaseError?.message || "Supabase signup failed");
+        setError({
+          isOpen: true,
+          title: "Registration Failed",
+          message: result.error?.message || "An unexpected error occurred",
+          details: "Error Code: REG_001",
+        })
+        return
       }
 
-      console.log("✅ Signup successful:", result.data);
-      // You can redirect or show a success message here
-      // Example:
-      // router.push("/verify-email");
+      console.log("Signup successful:", result.message)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred"
 
-      let title = "Registration Failed";
-      let message = "";
-      let details = "";
+      const title = "Registration Failed"
+      let message = ""
+      let details = ""
 
       if (errorMessage.includes("Username validation failed")) {
-        message = errorMessage.replace("Username validation failed: ", "");
-        details = "Error Code: REG_001";
+        message = errorMessage.replace("Username validation failed: ", "")
+        details = "Error Code: REG_001"
       } else if (errorMessage.includes("Password validation failed")) {
-        message = errorMessage.replace("Password validation failed: ", "");
-        details = "Error Code: REG_003";
-      } else if (errorMessage.includes("Supabase signup failed")) {
-        message = "We couldn’t create your account at the moment. Please try again later.";
-        details = "Error Code: SUPABASE_SIGNUP";
-      } else if (errorMessage.includes("Email")) {
-        message = "This email address is already registered. Try signing in instead.";
-        details = "Error Code: REG_002";
+        message = errorMessage.replace("Password validation failed: ", "")
+        details = "Error Code: REG_003"
       } else {
-        message = "Something went wrong during registration. Please try again.";
-        details = `Error Code: REG_999 - ${errorMessage}`;
+        message = errorMessage
+        details = "Error Code: REG_999"
       }
 
       setError({
@@ -251,12 +234,11 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         title,
         message,
         details,
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
-
+  }
 
   const getEmailPhoneLabel = () => {
     return detectedType === "email" ? "Email address" : "Phone number"
@@ -279,16 +261,14 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
   const handleSocialSignup = async (provider: string) => {
     try {
-      console.log(`Sign up with ${provider}`)
-      // Simulate social signup error
-      if (Math.random() < 0.4) {
-        throw new Error(`${provider} registration failed`)
+      if (provider === "github") {
+        await signinWithGithub()
       }
     } catch (err) {
       setError({
         isOpen: true,
         title: "Social Registration Failed",
-        message: `We couldn't create your account with ${provider}. This might be due to a temporary issue or the ${provider} account may already be associated with another account.`,
+        message: `We couldn't create your account with ${provider}.`,
         details: `Error Code: SOCIAL_002 - ${provider.toUpperCase()}_REG_FAILED`,
       })
     }
@@ -300,13 +280,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         <CardHeader className="space-y-4 text-center">
           <div className="flex items-center justify-center gap-2">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/20 border border-primary/30">
-              <Image
-                src="/images/collection.png"
-                alt="AI Logo"
-                width={60}
-                height={60}
-                className="object-contain rounded-xl"
-              />
+              <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Ai
@@ -316,7 +290,6 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Social Signup Buttons */}
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="outline"
@@ -328,11 +301,11 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             </Button>
             <Button
               variant="outline"
-              // onClick={() => handleSocialSignup("facebook")}
+              onClick={() => setIsPhoneModalOpen(true)}
               className="h-11 border-border/50 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200"
             >
               <Phone className="w-4 h-4 mr-2" />
-              Phone Number
+              Phone
             </Button>
           </div>
 
@@ -345,7 +318,6 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             </div>
           </div>
 
-          {/* Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username" className="text-sm font-medium flex items-center gap-2">
@@ -363,8 +335,9 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 placeholder="Choose a username (3-50 chars, no spaces or special chars)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className={`h-11 bg-input/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 ${username && !usernameValidation.isValid ? "border-red-500/50" : ""
-                  }`}
+                className={`h-11 bg-input/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 ${
+                  username && !usernameValidation.isValid ? "border-red-500/50" : ""
+                }`}
                 required
               />
               {username && !usernameValidation.isValid && (
@@ -423,8 +396,9 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                   placeholder="Create a strong password (8-60 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`h-11 bg-input/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 pr-10 ${password && !passwordValidation.isValid ? "border-red-500/50" : ""
-                    }`}
+                  className={`h-11 bg-input/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 pr-10 ${
+                    password && !passwordValidation.isValid ? "border-red-500/50" : ""
+                  }`}
                   required
                 />
                 <button
@@ -496,6 +470,13 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      <PhoneLoginModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSuccess={(phone) => console.log("Phone signup successful:", phone)}
+        isSignup={true}
+      />
 
       <ErrorModal
         isOpen={error.isOpen}
