@@ -13,30 +13,37 @@ import {
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ConfirmPage() {
+export default function CallbackPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const confirmEmail = async () => {
+    const handleCallback = async () => {
       try {
         const supabase = createClient();
 
-        // Get token from URL hash (email confirmation) or search params (OAuth)
+        // Get code from query params (server-side redirect)
+        const code = searchParams.get("code");
+
+        // Get tokens from hash fragment (client-side redirect)
         const hashParams = new URLSearchParams(
           window.location.hash.substring(1)
         );
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
-        const type = hashParams.get("type");
-        const code = searchParams.get("code");
-        const token = searchParams.get("token");
-        const tokenHash = searchParams.get("token_hash");
+        const errorParam = hashParams.get("error");
+        const errorDescription = hashParams.get("error_description");
 
-        // Handle OAuth callback with code (from callback route)
+        // Handle OAuth errors from hash
+        if (errorParam) {
+          setError(errorDescription || errorParam || "Authentication failed");
+          setIsLoading(false);
+          return;
+        }
+
+        // Handle OAuth callback with code (PKCE flow)
         if (code) {
           const { data, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
@@ -46,21 +53,18 @@ export default function ConfirmPage() {
           }
 
           if (data.session) {
-            setSuccess(true);
-            setTimeout(() => {
-              router.push("/");
-            }, 1500);
+            // Success - redirect to app
+            router.push("/");
             return;
           }
         }
 
-        // Handle email confirmation with token from URL hash
-        if (accessToken && type === "email") {
-          // Set the session using the tokens from the hash
+        // Handle OAuth callback with tokens in hash (implicit flow)
+        if (accessToken && refreshToken) {
           const { data: sessionData, error: sessionError } =
             await supabase.auth.setSession({
               access_token: accessToken,
-              refresh_token: refreshToken || "",
+              refresh_token: refreshToken,
             });
 
           if (sessionError) {
@@ -68,68 +72,27 @@ export default function ConfirmPage() {
           }
 
           if (sessionData.session) {
-            setSuccess(true);
-            setTimeout(() => {
-              router.push("/");
-            }, 1500);
-            return;
-          }
-        }
-
-        // Handle email confirmation with token from query params (alternative format)
-        if (token && tokenHash) {
-          const { data: verifyData, error: verifyError } =
-            await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: "email",
-            });
-
-          if (verifyError) {
-            throw verifyError;
-          }
-
-          if (verifyData.session) {
-            setSuccess(true);
-            setTimeout(() => {
-              router.push("/");
-            }, 1500);
-            return;
-          }
-        }
-
-        // Fallback: Check if we already have a session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError) throw sessionError;
-
-        if (session) {
-          setSuccess(true);
-          setTimeout(() => {
+            // Success - redirect to app
             router.push("/");
-          }, 1500);
-          return;
+            return;
+          }
         }
 
-        // No valid token or session
-        setError(
-          "Invalid confirmation link or session expired. Please try signing up again."
-        );
+        // No valid code or tokens
+        setError("Invalid callback. No authentication code or tokens found.");
       } catch (err: unknown) {
-        console.error("Acyrx Confirmation error:", err);
+        console.error("OAuth callback error:", err);
         setError(
           err instanceof Error
             ? err.message
-            : "Confirmation failed. Please try again."
+            : "Authentication failed. Please try again."
         );
       } finally {
         setIsLoading(false);
       }
     };
 
-    confirmEmail();
+    handleCallback();
   }, [router, searchParams]);
 
   return (
@@ -141,22 +104,24 @@ export default function ConfirmPage() {
               {isLoading && (
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               )}
-              {success && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+              {!isLoading && !error && (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              )}
               {error && <XCircle className="w-5 h-5 text-destructive" />}
               <CardTitle className="text-2xl">
                 {isLoading
-                  ? "Confirming..."
+                  ? "Completing Sign In..."
                   : error
-                  ? "Confirmation Failed"
-                  : "Successfully Confirmed"}
+                  ? "Sign In Failed"
+                  : "Sign In Successful"}
               </CardTitle>
             </div>
             <CardDescription>
               {isLoading
-                ? "Please wait while we verify your account"
+                ? "Please wait while we complete your sign in"
                 : error
-                ? "There was an issue confirming your account"
-                : "Your account has been successfully confirmed!"}
+                ? "There was an issue signing you in"
+                : "You have been successfully signed in!"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -178,15 +143,10 @@ export default function ConfirmPage() {
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             )}
-            {success && !error && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground text-center">
-                  Redirecting you to the app...
-                </p>
-                <Button onClick={() => router.push("/")} className="w-full">
-                  Go to App
-                </Button>
-              </div>
+            {!isLoading && !error && (
+              <p className="text-sm text-muted-foreground text-center">
+                Redirecting you to the app...
+              </p>
             )}
           </CardContent>
         </Card>

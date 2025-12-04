@@ -128,3 +128,48 @@
 .gradient-bg {
   background: radial-gradient(ellipse at top, oklch(0.1 0.05 270) 0%, oklch(0.02 0 0) 50%);
 }
+
+/* Phone input styling */
+.phone-input {
+  @apply w-full flex items-center gap-2;
+}
+
+.phone-input .PhoneInputInput {
+  @apply h-11 bg-input/50 border border-border/50 rounded-md px-3 text-foreground flex-1;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50;
+  @apply transition-colors;
+}
+
+.phone-input .PhoneInputCountry {
+  @apply mr-2 flex items-center;
+}
+
+.phone-input .PhoneInputCountrySelect {
+  @apply bg-input/50 border border-border/50 rounded-md px-2 py-1.5 text-foreground text-sm;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50;
+  @apply transition-colors cursor-pointer;
+  @apply hover:bg-input;
+}
+
+.phone-input .PhoneInputCountryIcon {
+  @apply border-border/50 rounded;
+  @apply w-6 h-4 object-cover;
+}
+
+.phone-input .PhoneInputCountrySelectArrow {
+  @apply opacity-60 ml-1;
+}
+
+/* Ensure flags are visible */
+.phone-input .PhoneInputCountryIcon img {
+  @apply w-full h-full object-cover;
+}
+
+/* Dark mode adjustments for phone input */
+.dark .phone-input .PhoneInputInput {
+  @apply bg-input/50;
+}
+
+.dark .phone-input .PhoneInputCountrySelect {
+  @apply bg-input/50;
+}

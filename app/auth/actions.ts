@@ -56,7 +56,11 @@ export async function signup(formData: FormData) {
       data: { username },
       emailRedirectTo:
         process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-        `${process.env.SITE_URL || window.location.origin}/auth/confirm`,
+        `${
+          process.env.SITE_URL ||
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          "http://localhost:3000"
+        }/auth/confirm`,
     },
   });
 
@@ -83,7 +87,15 @@ export async function signin(formData: FormData) {
   const email = (formData.get("email") as string)?.trim();
   const phone = (formData.get("phone") as string)?.trim();
   const password = (formData.get("password") as string)?.trim();
-  const identifier = email || phone;
+
+  // Format phone number with country code if provided
+  const formattedPhone = phone
+    ? phone.startsWith("+")
+      ? phone
+      : `+${phone.replace(/^\+/, "")}`
+    : null;
+
+  const identifier = email || formattedPhone;
 
   if (!identifier || !password) {
     return {
@@ -175,12 +187,16 @@ export async function updatePassword(formData: FormData) {
 export async function signinWithGithub() {
   const supabase = await createClient();
 
+  const redirectUrl = `${
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://localhost:3000"
+  }/auth/callback`;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: `${
-        process.env.SITE_URL || "http://localhost:3000"
-      }/auth/callback`,
+      redirectTo: redirectUrl,
     },
   });
 
@@ -188,5 +204,82 @@ export async function signinWithGithub() {
     return { success: false, error };
   }
 
-  redirect(data.url);
+  if (data.url) {
+    redirect(data.url);
+  } else {
+    return { success: false, error: { message: "Failed to get OAuth URL" } };
+  }
+}
+
+export async function sendPhoneOTP(formData: FormData) {
+  const supabase = await createClient();
+
+  const phone = (formData.get("phone") as string)?.trim();
+
+  if (!phone) {
+    return { success: false, error: { message: "Phone number is required." } };
+  }
+
+  // Ensure phone number starts with + for international format
+  const formattedPhone = phone.startsWith("+")
+    ? phone
+    : `+${phone.replace(/^\+/, "")}`;
+
+  const { data, error } = await supabase.auth.signInWithOtp({
+    phone: formattedPhone,
+    options: {
+      channel: "sms",
+    },
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: { message: error.message || "Failed to send OTP." },
+    };
+  }
+
+  return {
+    success: true,
+    data,
+    message: "OTP sent successfully! Please check your phone.",
+  };
+}
+
+export async function verifyPhoneOTP(formData: FormData) {
+  const supabase = await createClient();
+
+  const phone = (formData.get("phone") as string)?.trim();
+  const token = (formData.get("token") as string)?.trim();
+
+  if (!phone || !token) {
+    return {
+      success: false,
+      error: { message: "Phone number and OTP are required." },
+    };
+  }
+
+  // Ensure phone number starts with + for international format
+  const formattedPhone = phone.startsWith("+")
+    ? phone
+    : `+${phone.replace(/^\+/, "")}`;
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    phone: formattedPhone,
+    token,
+    type: "sms",
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: { message: error.message || "Invalid OTP. Please try again." },
+    };
+  }
+
+  return {
+    success: true,
+    data,
+    message: "Phone verified successfully!",
+  };
 }

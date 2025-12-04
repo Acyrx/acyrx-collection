@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
     "/auth/sign-up-success",
     "/auth/verify-otp",
     "/auth/callback",
+    "/auth/confirm",
     "/auth/error",
   ];
   const isPublicRoute = publicRoutes.some(
