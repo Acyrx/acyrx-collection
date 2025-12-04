@@ -2,7 +2,11 @@
  * Utility functions for carrier detection from phone numbers
  */
 
-import { parsePhoneNumber, getCountryCallingCode, AsYouType } from "libphonenumber-js";
+import {
+  parsePhoneNumber,
+  getCountryCallingCode,
+  AsYouType,
+} from "libphonenumber-js";
 import type { CountryCode } from "./country-detection";
 
 export interface CarrierInfo {
@@ -72,7 +76,7 @@ export function getCarrierInfo(phoneNumber: string): CarrierInfo | null {
 
     // Parse the phone number
     const phoneNumberObj = parsePhoneNumber(phoneNumber);
-    
+
     if (!phoneNumberObj || !phoneNumberObj.isValid()) {
       return null;
     }
@@ -83,12 +87,15 @@ export function getCarrierInfo(phoneNumber: string): CarrierInfo | null {
 
     // Basic carrier detection based on country and number patterns
     // This is a simplified version - for actual carrier detection, you'd need a service like Twilio Lookup
-    const carrier = detectCarrierFromPattern(phoneNumberObj.nationalNumber, country);
+    const carrier = detectCarrierFromPattern(
+      phoneNumberObj.nationalNumber,
+      country
+    );
 
     return {
       country: country || "US",
       countryCode: `+${countryCode}`,
-      countryName: country ? (COUNTRY_NAMES[country] || country) : undefined,
+      countryName: country ? COUNTRY_NAMES[country] || country : undefined,
       carrier,
       isValid: true,
       formattedNumber,
@@ -114,7 +121,7 @@ function detectCarrierFromPattern(
   // - Twilio Lookup API
   // - Google's libphonenumber carrier mapping
   // - NumLookup API
-  
+
   // For now, return undefined as we don't have a reliable free service
   // The phone number will still work, we just won't show carrier info
   return undefined;
@@ -123,11 +130,16 @@ function detectCarrierFromPattern(
 /**
  * Format phone number with country code
  */
-export function formatPhoneNumber(phoneNumber: string, country?: CountryCode): string {
+export function formatPhoneNumber(
+  phoneNumber: string,
+  country?: CountryCode
+): string {
   try {
     if (!phoneNumber) return "";
-    
-    const asYouType = new AsYouType(country);
+
+    // AsYouType expects CountryCode from libphonenumber-js or an options object
+    // If country is provided, use it; otherwise pass undefined
+    const asYouType = country ? new AsYouType(country as any) : new AsYouType();
     return asYouType.input(phoneNumber);
   } catch (error) {
     return phoneNumber;
@@ -137,7 +149,9 @@ export function formatPhoneNumber(phoneNumber: string, country?: CountryCode): s
 /**
  * Get country code from phone number
  */
-export function getCountryFromPhoneNumber(phoneNumber: string): CountryCode | null {
+export function getCountryFromPhoneNumber(
+  phoneNumber: string
+): CountryCode | null {
   try {
     const phoneNumberObj = parsePhoneNumber(phoneNumber);
     return (phoneNumberObj?.country as CountryCode) || null;
@@ -145,4 +159,3 @@ export function getCountryFromPhoneNumber(phoneNumber: string): CountryCode | nu
     return null;
   }
 }
-
