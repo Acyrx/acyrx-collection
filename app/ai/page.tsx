@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Mic,
   MessageSquare,
@@ -18,21 +18,35 @@ import {
   Headphones,
   Languages,
   Users,
-  Activity,
   Gamepad,
   Bookmark,
   Search,
-} from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import type { JSX } from "react/jsx-runtime";
+
+interface Tutor {
+  id: number;
+  title: string;
+  description: string;
+  icon: JSX.Element;
+  category: string;
+  color: string;
+}
 
 const AITutorsPage = () => {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   // AI Tutors data categorized by type
   const aiTutors = {
@@ -192,41 +206,48 @@ const AITutorsPage = () => {
         color: "text-amber-600 bg-amber-100",
       },
     ],
-  }
+  };
 
   // Combine all tutors for "All" tab
-  const allTutors = Object.values(aiTutors).flat()
+  const allTutors = Object.values(aiTutors).flat();
 
   const filteredTutors = {
-    all: allTutors.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    all: allTutors.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    voice: aiTutors.voice.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    voice: aiTutors.voice.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    chat: aiTutors.chat.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    chat: aiTutors.chat.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    scraping: aiTutors.scraping.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    scraping: aiTutors.scraping.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    multimedia: aiTutors.multimedia.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    multimedia: aiTutors.multimedia.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    assessment: aiTutors.assessment.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    assessment: aiTutors.assessment.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-    creative: aiTutors.creative.filter(tutor =>
-      tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
+    creative: aiTutors.creative.filter(
+      (tutor) =>
+        tutor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tutor.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-  }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -277,66 +298,85 @@ const AITutorsPage = () => {
         </TabsList>
 
         {/* All Tutors */}
-        <TabsContent value="all" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="all"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.all.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
 
         {/* Voice Tutors */}
-        <TabsContent value="voice" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="voice"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.voice.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
 
         {/* Chat Tutors */}
-        <TabsContent value="chat" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="chat"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.chat.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
 
         {/* Scraping Tutors */}
-        <TabsContent value="scraping" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="scraping"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.scraping.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
 
         {/* Multimedia Tutors */}
-        <TabsContent value="multimedia" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="multimedia"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.multimedia.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
 
         {/* Assessment Tutors */}
-        <TabsContent value="assessment" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="assessment"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.assessment.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
 
         {/* Creative Tutors */}
-        <TabsContent value="creative" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent
+          value="creative"
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredTutors.creative.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </TabsContent>
       </Tabs>
     </div>
-  )
-}
+  );
+};
 
-const TutorCard = ({ tutor }) => {
+const TutorCard = ({ tutor }: { tutor: Tutor }) => {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="flex flex-row items-start justify-between pb-2">
         <div className="flex items-center gap-3">
-          <div className={`p-3 rounded-full ${tutor.color}`}>
-            {tutor.icon}
-          </div>
+          <div className={`p-3 rounded-full ${tutor.color}`}>{tutor.icon}</div>
           <div>
             <CardTitle>{tutor.title}</CardTitle>
             <Badge variant="outline" className="mt-1">
@@ -361,7 +401,7 @@ const TutorCard = ({ tutor }) => {
         </Button>
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-export default AITutorsPage
+export default AITutorsPage;
