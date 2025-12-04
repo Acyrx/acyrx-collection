@@ -197,6 +197,8 @@ export async function signinWithGithub() {
     provider: "github",
     options: {
       redirectTo: redirectUrl,
+      // Skip PKCE to use hash-based flow (tokens in URL hash)
+      skipBrowserRedirect: false,
     },
   });
 

@@ -43,23 +43,8 @@ export default function CallbackPage() {
           return;
         }
 
-        // Handle OAuth callback with code (PKCE flow)
-        if (code) {
-          const { data, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-
-          if (exchangeError) {
-            throw exchangeError;
-          }
-
-          if (data.session) {
-            // Success - redirect to app
-            router.push("/");
-            return;
-          }
-        }
-
-        // Handle OAuth callback with tokens in hash (implicit flow)
+        // Priority 1: Handle OAuth callback with tokens in hash (Supabase default flow)
+        // This is the most reliable method and doesn't require PKCE
         if (accessToken && refreshToken) {
           const { data: sessionData, error: sessionError } =
             await supabase.auth.setSession({
@@ -72,6 +57,29 @@ export default function CallbackPage() {
           }
 
           if (sessionData.session) {
+            // Success - redirect to app
+            router.push("/");
+            return;
+          }
+        }
+
+        // Priority 2: Handle OAuth callback with code (PKCE flow)
+        // This requires the code_verifier to be in sessionStorage
+        // Only works if OAuth was initiated client-side
+        if (code) {
+          const { data, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+
+          if (exchangeError) {
+            // PKCE failed - likely because code_verifier is missing
+            // This happens when OAuth is initiated server-side
+            console.error("PKCE exchange error:", exchangeError);
+            throw new Error(
+              "Authentication failed. Please try signing in again from the login page."
+            );
+          }
+
+          if (data.session) {
             // Success - redirect to app
             router.push("/");
             return;
@@ -130,10 +138,7 @@ export default function CallbackPage() {
                 <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                   {error}
                 </p>
-                <Button
-                  onClick={() => router.push("/auth/login")}
-                  className="w-full"
-                >
+                <Button onClick={() => router.push("/auth")} className="w-full">
                   Back to Login
                 </Button>
               </div>
