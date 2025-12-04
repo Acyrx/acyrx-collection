@@ -64,15 +64,31 @@ export default function CallbackPage() {
         }
 
         // Priority 2: Handle OAuth callback with code (PKCE flow)
-        // This requires the code_verifier to be in sessionStorage
-        // Only works if OAuth was initiated client-side
+        // If we have a code but no hash tokens, the server-side route handler
+        // should have already processed it. If we reach here, check for session.
         if (code) {
+          // Check if we already have a session (set by server-side route handler)
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+
+          if (sessionError) {
+            throw sessionError;
+          }
+
+          if (session) {
+            // Success - redirect to app
+            router.push("/");
+            return;
+          }
+
+          // If no session, try client-side exchange (only works if OAuth was client-initiated)
           const { data, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
             // PKCE failed - likely because code_verifier is missing
-            // This happens when OAuth is initiated server-side
             console.error("PKCE exchange error:", exchangeError);
             throw new Error(
               "Authentication failed. Please try signing in again from the login page."
