@@ -285,3 +285,42 @@ export async function verifyPhoneOTP(formData: FormData) {
     message: "Phone verified successfully!",
   };
 }
+
+export async function confirmEmailWithCode(code: string) {
+  const supabase = await createClient();
+
+  try {
+    // Exchange the code for a session server-side
+    // This handles PKCE for email confirmation when Supabase uses code-based flow
+    const { data, error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    if (exchangeError) {
+      return {
+        success: false,
+        error: { message: exchangeError.message || "Failed to confirm email." },
+      };
+    }
+
+    if (data.session) {
+      return {
+        success: true,
+        data,
+        message: "Email confirmed successfully!",
+      };
+    }
+
+    return {
+      success: false,
+      error: { message: "Failed to create session after confirmation." },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: {
+        message:
+          err instanceof Error ? err.message : "An unexpected error occurred",
+      },
+    };
+  }
+}

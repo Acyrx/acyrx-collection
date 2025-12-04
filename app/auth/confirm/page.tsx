@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { confirmEmailWithCode } from "@/app/auth/actions";
 
 export default function ConfirmPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,22 +37,27 @@ export default function ConfirmPage() {
         const token = searchParams.get("token");
         const tokenHash = searchParams.get("token_hash");
 
-        // Handle OAuth callback with code (from callback route)
-        if (code) {
-          const { data, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
+        // Handle email confirmation with code (PKCE flow)
+        // Supabase may use code-based confirmation in some configurations
+        if (code && type === "email") {
+          // Use server action to exchange code server-side (handles PKCE properly)
+          const result = await confirmEmailWithCode(code);
 
-          if (exchangeError) {
-            throw exchangeError;
+          if (!result.success) {
+            throw new Error(result.error?.message || "Failed to confirm email");
           }
 
-          if (data.session) {
+          if (result.data?.session) {
             setSuccess(true);
             setTimeout(() => {
               router.push("/");
             }, 1500);
             return;
           }
+        } else if (code) {
+          // Code without type=email is likely OAuth - redirect to callback route
+          router.push(`/auth/callback?code=${code}`);
+          return;
         }
 
         // Handle email confirmation with token from URL hash
