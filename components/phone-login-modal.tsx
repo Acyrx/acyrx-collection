@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Phone, ArrowLeft, Loader2 } from "lucide-react";
 import { ErrorModal } from "@/components/error-modal";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { sendPhoneOTP, verifyPhoneOTP } from "@/app/auth/actions";
 import { isValidPhoneNumber } from "react-phone-number-input";
