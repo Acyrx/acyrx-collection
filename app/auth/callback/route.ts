@@ -25,11 +25,12 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient();
-    
+
     try {
       // Exchange the code for a session server-side
       // The server-side client handles PKCE by storing code_verifier in cookies
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      const { data, error: exchangeError } =
+        await supabase.auth.exchangeCodeForSession(code);
 
       if (exchangeError) {
         console.error("OAuth callback error:", exchangeError);
@@ -38,7 +39,8 @@ export async function GET(request: NextRequest) {
         const errorUrl = new URL("/auth/error", requestUrl.origin);
         errorUrl.searchParams.set(
           "error",
-          exchangeError.message || "Failed to exchange authorization code. Please try again."
+          exchangeError.message ||
+            "Failed to exchange authorization code. Please try again."
         );
         return NextResponse.redirect(errorUrl);
       }
@@ -46,15 +48,20 @@ export async function GET(request: NextRequest) {
       if (data.session) {
         // Success - create a redirect response
         // The session cookies are automatically set by the server-side client's cookie handler
-        const response = NextResponse.redirect(new URL(next, requestUrl.origin));
-        
+        const response = NextResponse.redirect(
+          new URL(next, requestUrl.origin)
+        );
+
         // Ensure cookies are properly set in the response
         // The Supabase SSR client should have already set them via setAll
         return response;
       } else {
         // No session after exchange - redirect to error
         const errorUrl = new URL("/auth/error", requestUrl.origin);
-        errorUrl.searchParams.set("error", "Failed to create session after authentication");
+        errorUrl.searchParams.set(
+          "error",
+          "Failed to create session after authentication"
+        );
         return NextResponse.redirect(errorUrl);
       }
     } catch (err) {
@@ -68,7 +75,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If no code, let the page component handle hash-based tokens
-  return NextResponse.next();
+  // If no code, redirect to login
+  // Note: Hash-based tokens (client-side OAuth) are handled client-side
+  // and won't reach this server-side route handler
+  return NextResponse.redirect(new URL("/auth", requestUrl.origin));
 }
-
