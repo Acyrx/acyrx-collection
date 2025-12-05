@@ -22,6 +22,9 @@ export default function ConfirmPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    let isMounted = true;
+    let hasSucceeded = false;
+
     const confirmEmail = async () => {
       try {
         const supabase = createClient();
@@ -48,9 +51,19 @@ export default function ConfirmPage() {
           }
 
           if (result.data?.session) {
-            setSuccess(true);
+            // Server action has confirmed email and set session cookies
+            // The session cookies are now available for the next page load
+            hasSucceeded = true;
+            if (isMounted) {
+              setSuccess(true);
+              setIsLoading(false);
+            }
+
+            // Redirect after a brief delay to show success message
             setTimeout(() => {
-              router.push("/");
+              if (isMounted) {
+                router.push("/auth");
+              }
             }, 1500);
             return;
           }
@@ -74,9 +87,15 @@ export default function ConfirmPage() {
           }
 
           if (sessionData.session) {
-            setSuccess(true);
+            hasSucceeded = true;
+            if (isMounted) {
+              setSuccess(true);
+              setIsLoading(false);
+            }
             setTimeout(() => {
-              router.push("/");
+              if (isMounted) {
+                router.push("/auth");
+              }
             }, 1500);
             return;
           }
@@ -95,9 +114,15 @@ export default function ConfirmPage() {
           }
 
           if (verifyData.session) {
-            setSuccess(true);
+            hasSucceeded = true;
+            if (isMounted) {
+              setSuccess(true);
+              setIsLoading(false);
+            }
             setTimeout(() => {
-              router.push("/");
+              if (isMounted) {
+                router.push("/auth");
+              }
             }, 1500);
             return;
           }
@@ -112,30 +137,47 @@ export default function ConfirmPage() {
         if (sessionError) throw sessionError;
 
         if (session) {
-          setSuccess(true);
+          hasSucceeded = true;
+          if (isMounted) {
+            setSuccess(true);
+            setIsLoading(false);
+          }
           setTimeout(() => {
-            router.push("/");
+            if (isMounted) {
+              router.push("/auth");
+            }
           }, 1500);
           return;
         }
 
         // No valid token or session
-        setError(
-          "Invalid confirmation link or session expired. Please try signing up again."
-        );
+        if (isMounted && !hasSucceeded) {
+          setError(
+            "Invalid confirmation link or session expired. Please try signing up again."
+          );
+        }
       } catch (err: unknown) {
-        console.error("Acyrx Confirmation error:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Confirmation failed. Please try again."
-        );
+        // Only set error if we haven't already succeeded
+        if (isMounted && !hasSucceeded) {
+          console.error("Acyrx Confirmation error:", err);
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Confirmation failed. Please try again."
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted && !hasSucceeded) {
+          setIsLoading(false);
+        }
       }
     };
 
     confirmEmail();
+
+    return () => {
+      isMounted = false;
+    };
   }, [router, searchParams]);
 
   return (
@@ -171,10 +213,7 @@ export default function ConfirmPage() {
                 <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                   {error}
                 </p>
-                <Button
-                  onClick={() => router.push("/auth/login")}
-                  className="w-full"
-                >
+                <Button onClick={() => router.push("/auth")} className="w-full">
                   Back to Login
                 </Button>
               </div>
@@ -187,10 +226,10 @@ export default function ConfirmPage() {
             {success && !error && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground text-center">
-                  Redirecting you to the app...
+                  Redirecting you to login...
                 </p>
-                <Button onClick={() => router.push("/")} className="w-full">
-                  Go to App
+                <Button onClick={() => router.push("/auth")} className="w-full">
+                  Go to Login
                 </Button>
               </div>
             )}
